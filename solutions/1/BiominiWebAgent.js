@@ -1,8 +1,8 @@
 	////////////////////////////////////////////////// Global Variables //////////////////////////////////////////////
 
-	var protocolVer = "http";		
+	var protocolVer = "https";		
 	var domainName = "localhost";
-	var portNo = 5678;
+	var portNo = 8083;
 	
 	var strBuffer;                      
 	var numOfEnrolledUser = 0;
@@ -41,8 +41,8 @@
     var gToastTimeout = 3000;
     var tagToast;
 
-    //var urlStr = protocolVer + '://' + domainName + ':' + portNo;
-    var urlStr = "";
+    var urlStr = protocolVer + '://' + domainName + ':' + portNo;
+    // var urlStr = "";
 
     var pageID = 0;
 ////////////////////////////////////////////////// Functions //////////////////////////////////////////////
@@ -68,6 +68,7 @@
 			type : "GET",
 			url : urlStr + "/api/initDevice?dummy=" + Math.random(),
 			dataType : "json",
+			contentType:"application/json; charset=utf-8",
 			success : function(msg) {
 				AppendLog("Init", msg.retString);
 				if(msg.retValue == 0) {
@@ -546,6 +547,7 @@
 	    jQuery.ajax({
 	        type: "GET",
 	        url: urlStr + "/api/createSessionID?dummy=" + Math.random(),
+	        contentType:"application/json; charset=utf-8",
 	        dataType: "json",
 	        success: function (msg) {
 	            var current = new Date();
