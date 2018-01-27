@@ -1,0 +1,26 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+    <title>BioMini Web Example (Solution Attempt #3 Pure JS)</title>
+    <meta charset="utf-8">
+    <script language="JavaScript" src='biomini_webagent_pure.js'></script>
+</head>
+<body onload="InitPage()"
+      onbeforeunload="DeletePage()">
+        <h1>BioMini Web Example (Solution Attempt #3 Pure JS)</h1>
+        <h2>Changes</h2>
+        <ul>
+            <li>Remove jQuery</li>
+            <li>Changed all functions to pure JS</li>
+        </ul>
+        <h2>Result</h2>
+        <p>Working fine with IE11.</p>
+        <button id="Bt_Init" style="width:120px;height:30px;" onclick="Init()">Init</button>
+        <br/><br/>
+        
+        <h2 id="TdAlert" style="color:blue;"></h2>
+
+        <textarea id="Tb_DisplayLog" style="width:320px;height:250px;" size="5000"></textarea>
+</body>
+</html>

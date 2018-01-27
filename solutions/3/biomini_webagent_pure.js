@@ -1,8 +1,5 @@
 	////////////////////////////////////////////////// Global Variables //////////////////////////////////////////////
 
-	// var protocolVer = "http";		
-	// var domainName = "localhost";
-	// var portNo = 5678;
 	var protocolVer = "https";		
 	var domainName = "localhost";
 	var portNo = 8083;
@@ -45,7 +42,7 @@
     var tagToast;
 
     var urlStr = protocolVer + '://' + domainName + ':' + portNo;
-    //var urlStr = "";
+    // var urlStr = "";
 
     var pageID = 0;
 ////////////////////////////////////////////////// Functions //////////////////////////////////////////////
@@ -71,6 +68,7 @@
 			type : "GET",
 			url : urlStr + "/api/initDevice?dummy=" + Math.random(),
 			dataType : "json",
+			//crossDomain: true,
 			success : function(msg) {
 				AppendLog("Init", msg.retString);
 				if(msg.retValue == 0) {
@@ -97,6 +95,10 @@
 			type : "GET",
 			url : urlStr + "/api/uninitDevice?dummy=" + Math.random(),
 			dataType : "json",
+			crossDomain: true,
+			xhrFields: {
+				withCredentials: false,
+			},
 			success : function(msg) {
 				AppendLog("Uninit", msg.retString);
 				if(msg.retValue == 0){
@@ -549,6 +551,7 @@
 	    jQuery.ajax({
 	        type: "GET",
 	        url: urlStr + "/api/createSessionID?dummy=" + Math.random(),
+	        crossDomain: true,
 	        dataType: "json",
 	        success: function (msg) {
 	            var current = new Date();
@@ -1253,7 +1256,7 @@
     function Toast(msg, timeout)
     {
         document.getElementById("TdAlert").innerHTML = msg;
-        clearTimeout(tagToast);
+        // clearTimeout(tagToast);
         tagToast = setTimeout(function(){ document.getElementById("TdAlert").innerHTML = ""; }, timeout);
     }
 	

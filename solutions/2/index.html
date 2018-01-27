@@ -1,0 +1,28 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+    <title>BioMini Web Example (Solution Attempt #2)</title>
+    <meta charset="utf-8">
+    <script language='javascript' src='array.generics.min.js'></script>
+    <script language='javascript' src='jquery-3.3.1.min.js'></script>
+    <script language="JavaScript" src='BiominiWebAgent.js'></script>
+</head>
+<body onload="InitPage()"
+      onbeforeunload="DeletePage()">
+        <h1>BioMini Web Example (Solution Attempt #2)</h1>
+        <h2>Changes</h2>
+        <ul>
+            <li>Using jquery 3.3.1</li>
+            <li>Added <b>'crossDomain: true,'</b> to the InitPage() and Init() functions</li>
+        </ul>
+        <h2>Result</h2>
+        <p>Working fine with IE11.</p>
+        <button id="Bt_Init" style="width:120px;height:30px;" onclick="Init()">Init</button>
+        <br/><br/>
+        
+        <h2 id="TdAlert" style="color:blue;"></h2>
+
+        <textarea id="Tb_DisplayLog" style="width:320px;height:250px;" size="5000"></textarea>
+</body>
+</html>

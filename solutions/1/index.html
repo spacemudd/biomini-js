@@ -10,10 +10,18 @@
 </head>
 <body onload="InitPage()"
       onbeforeunload="DeletePage()">
-    <center>
-        <h1>BioMini Web Example (Solution Attempt #1)</h1>
-        <button id="Bt_Init" style="width:120px;height:30px;" onclick="Init()">Init</button>
-        <textarea id="Tb_DisplayLog" style="width:320px;height:250px;" size="5000"></textarea>
-    </center>
+    <h1>BioMini Web Example (Solution Attempt #1)</h1>
+    <h2>Changes</h2>
+    <ul>
+        <li>Added <b style="background-color:gray;color:white;padding:5px;">'contentType:"application/json; charset=utf-8",'</b> to ajax call InitPage() and Init()</li>
+    </ul>
+    <h2>Result</h2>
+    <p>Fails with IE11.</p>
+    <p>Console log result on load of InitPage():</p>
+    <p style="color:red;"><span style="color:blue;">SEC7123:</span> Request header content-type was not present in the Access-Control-Allow-Headers list.</p>
+    <p style="color:red;"><span style="color:blue;">SCRIPT7002:</span> XMLHttpRequest: Network Error 0x80070005, Access is denied.</p>
+    <button id="Bt_Init" style="width:120px;height:30px;" onclick="Init()">Init</button>
+    <br/><br/>
+    <textarea id="Tb_DisplayLog" style="width:320px;height:250px;" size="5000"></textarea>
 </body>
 </html>
