@@ -1,0 +1,24 @@
+Environment:
+
+Server specs is UNIX running WebSphere IBM behind HTTP server.
+
+Browser specs is IE7+.
+
+When trying to to request BiominiWebAgent.js - SCRIPT5 error shows up in the console.
+
+
+Suggestable fixes:
+- Instead of using jQuery, use vanilla JS XML Domain request or w/ jsonp
+
+// create pure js (w/ activex)
+
+
+// jsonp - activex
+--------------------------------------------------------------------------------
+
+IE settings:
+- security on middle
+- wgproxy - lan settings 8080 (when removed, the response was recieved)
+- all webservices are being run on unix
+- all js are rendered on ^
+
