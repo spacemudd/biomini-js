@@ -115,7 +115,7 @@
 	}
 
     /**
-	 * Sends an AJAX request.
+     * Sends an AJAX request.
 	 *
      * @param url string
      * @param callback
@@ -376,7 +376,7 @@
 
         urlRequest = urlStr + "/api/captureSingle?dummy=" + Math.random()
             + "?sHandle=" + deviceInfos[selectedDeviceIndex].DeviceHandle
-            + "?id=" + pageID,
+            + "?id=" + pageID
             + "?resetTimer=" + delayVal;
 
         sendAjaxRequest(urlRequest, function(msg) {
@@ -541,7 +541,7 @@
 
         urlRequest = urlStr + "/api/saveImageBuffer?dummy=" + Math.random()
             + "?sHandle=" + deviceInfos[selectedDeviceIndex].DeviceHandle
-            + "?id=" + pageID;
+            + "?id=" + pageID
             + "?fileType=" + formatType
             + "?compressionRatio" + document.getElementById("DDb_CompRatio").value;
 
@@ -874,7 +874,7 @@
 		}
 
         urlRequest = urlStr + "/db/queryData?dummy=" + Math.random()
-            + "?sHandle=" + deviceInfos[selectedDeviceIndex].DeviceHandle
+            + "?sHandle=" + deviceInfos[selectedDeviceIndex].DeviceHandle;
 
         sendAjaxRequest(urlRequest, function(msg) {
             AppendLog("queryData", msg.retString);
