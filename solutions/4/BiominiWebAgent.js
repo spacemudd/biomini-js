@@ -1,8 +1,10 @@
 	////////////////////////////////////////////////// Global Variables //////////////////////////////////////////////
 
-	var protocolVer = "http";		
+	var debug = true;
+
+	var protocolVer = "https";
 	var domainName = "localhost";
-	var portNo = 5678;
+	var portNo = 8083;
 	
 	var strBuffer;                      
 	var numOfEnrolledUser = 0;
@@ -41,8 +43,8 @@
     var gToastTimeout = 3000;
     var tagToast;
 
-    //var urlStr = protocolVer + '://' + domainName + ':' + portNo;
-    var urlStr = "";
+    var urlStr = protocolVer + '://' + domainName + ':' + portNo;
+    // var urlStr = "";
 
     var pageID = 0;
 ////////////////////////////////////////////////// Functions //////////////////////////////////////////////
@@ -61,27 +63,92 @@
         }
     }
 
+    function sendXmlHttpRequest(url, callback) {
+        var xmlHttp;
+
+        xmlHttp = new XMLHttpRequest();
+
+        xmlHttp.onreadystatechange = function() {
+            if(xmlHttp.readyState == 4 && xmlHttp.status == 200) {
+                callback(JSON.parse(xmlHttp.responseText));
+            }
+        }
+
+        xmlHttp.open('GET', url, true);
+        xmlHttp.send();
+
+        if(debug) {
+        	alert('XMLHttp');
+		}
+	}
+
+	function sendXDomainRequestRequest(url) {
+        var response;
+
+        response = new XDomainRequest();
+
+        response.onload = function() {
+                return response.responseText;
+        }
+
+        response.open('GET', url, true);
+        response.send();
+
+        if(debug) {
+            alert('XDomainRequest');
+        }
+	}
+
+	function sendActiveXRequest(url) {
+        var response;
+
+        response = new ActiveXObject("Microsoft.XMLHTTP");
+        // response = new ActiveXObject("MSXML2.ServerXMLHTTP.6.0");
+        // response.setOption(2, 13056);
+
+        response.open('GET', url, false);
+        response.send();
+
+        if(debug) {
+            alert('ActiveXObject');
+        }
+	}
+
+    /**
+	 * Sends an AJAX request.
+	 *
+     * @param url string
+     * @param callback
+     */
+    function sendAjaxRequest(url, callback) {
+        if (window.XMLHttpRequest) {
+            sendXmlHttpRequest(url, function(response) {
+                callback(response);
+            });
+        } else if (window.XDomainRequest) {
+            var response = sendXDomainRequestRequest(url);
+            callback(response);
+        } else {
+            var response = sendActiveXRequest(url);
+            callback(response);
+		}
+    }
+
 
 	function Init() {
-		
-		jQuery.ajax({
-			type : "GET",
-			url : urlStr + "/api/initDevice?dummy=" + Math.random(),
-			dataType : "json",
-			success : function(msg) {
-				AppendLog("Init", msg.retString);
-				if(msg.retValue == 0) {
-					deviceInfos = msg.ScannerInfos;
-					AddScannerList(deviceInfos);
+        sendAjaxRequest(urlStr + "/api/initDevice?dummy=" + Math.random(), function(msg) {
+            var current = new Date();
+            var expires = new Date();
+            expires.setTime(new Date(Date.parse(current) + 1000 * 60 * 60));
+            if(msg) {
+                AppendLog("Init", msg.retString);
+                if(msg.retValue == 0) {
+                    deviceInfos = msg.ScannerInfos;
+                    AddScannerList(deviceInfos);
                     CheckStatusLoop();
-				}
-			},
-			error : function(request, status, error) {
-				Toast(JSON.stringify(request), gToastTimeout);
-				Toast(JSON.stringify(status), gToastTimeout);
-				Toast(JSON.stringify(error), gToastTimeout);
-			}
-		});
+                }
+            }
+        });
 	}
 	
 	function UnInit() {
@@ -90,54 +157,32 @@
 	        $("#Cb_PreviewOn").attr("checked", 0);
 	    }
 
-		jQuery.ajax({
-			type : "GET",
-			url : urlStr + "/api/uninitDevice?dummy=" + Math.random(),
-			dataType : "json",
-			success : function(msg) {
-				AppendLog("Uninit", msg.retString);
-				if(msg.retValue == 0){
-					$("#slt_ScannerList").attr("innerHTML" , "");
-				}else{
-					$("#slt_ScannerList").attr("innerHTML" , "");
-				}
-			},
-			error : function(request, status, error) {
-				Toast(JSON.stringify(request), gToastTimeout);
-				Toast(JSON.stringify(status), gToastTimeout);
-				Toast(JSON.stringify(error), gToastTimeout);
-			}
-		});
+        sendAjaxRequest(urlStr + "/api/uninitDevice?dummy=" + Math.random(), function(msg) {
+            AppendLog("Uninit", msg.retString);
+            if(msg.retValue == 0){
+                $("#slt_ScannerList").attr("innerHTML" , "");
+            }else{
+                $("#slt_ScannerList").attr("innerHTML" , "");
+            }
+        });
 	}
 	
 	function OnSelectScannerOptions(){
 		selectedDeviceIndex = $("#slt_ScannerList option:selected").attr("value");
-		
-		jQuery.ajax({
-			type : "GET",
-			url : urlStr + "/api/getScannerStatus?dummy=" + Math.random(),
-			dataType : "json",
-			data : {
-			    sHandle: deviceInfos[selectedDeviceIndex].DeviceHandle
-			},
-			success : function(msg) {
-				AppendLog("getScannerStatus", msg.retString);
-				if(msg.retValue == 0){
-					AppendLogData("====================");
-					AppendLogData("SensorValid: " + msg.SensorValid);
-					AppendLogData("SensorOn: " + msg.SensorOn);
-					AppendLogData("IsCapturing: " + msg.IsCapturing);
-					AppendLogData("IsFingerOn: " + msg.IsFingerOn);
-					AppendLogData("====================");
-                    QueryData();
-				}
-			},
-			error : function(request, status, error) {
-				Toast(JSON.stringify(request), gToastTimeout);
-				Toast(JSON.stringify(status), gToastTimeout);
-				Toast(JSON.stringify(error), gToastTimeout);
-			}
-		});
+        deviceHandle = deviceInfos[selectedDeviceIndex].DeviceHandle;
+
+        sendAjaxRequest(urlStr + "/api/getScannerStatus?dummy=" + Math.random() + "?sHandle=" + deviceHandle, function(msg) {
+            AppendLog("getScannerStatus", msg.retString);
+            if(msg.retValue == 0){
+                AppendLogData("====================");
+                AppendLogData("SensorValid: " + msg.SensorValid);
+                AppendLogData("SensorOn: " + msg.SensorOn);
+                AppendLogData("IsCapturing: " + msg.IsCapturing);
+                AppendLogData("IsFingerOn: " + msg.IsFingerOn);
+                AppendLogData("====================");
+                QueryData();
+            }
+        });
 	}
 
 	function CheckStatusLoop() {
@@ -145,55 +190,33 @@
 	        selectedDeviceIndex = 0;
         else
 		    selectedDeviceIndex = $("#slt_ScannerList option:selected").attr("value");
-		
-		jQuery.ajax({
-			type : "GET",
-			url: urlStr + "/api/getScannerStatus?dummy=" + Math.random(),
-			dataType : "json",
-			data : {
-			    sHandle: deviceInfos[selectedDeviceIndex].DeviceHandle
-			},
-			success : function(msg) {
-				if(msg.retValue == 0){
-                    gSensorValid = msg.SensorValid;
-                    gIsCapturing = msg.IsCapturing;
-                    gSensorOn = msg.SensorOn;
-                    gIsFingeOn = msg.IsFingerOn;
-				}
-			},
-			error : function(request, status, error) {
-				Toast(JSON.stringify(request), gToastTimeout);
-				Toast(JSON.stringify(status), gToastTimeout);
-				Toast(JSON.stringify(error), gToastTimeout);
-			}
-		});
+
+        deviceHandle = deviceInfos[selectedDeviceIndex].DeviceHandle;
+
+        sendAjaxRequest(urlStr + "/api/getScannerStatus?dummy=" + Math.random() + "?sHandle=" + deviceHandle, function(msg) {
+            if(msg.retValue == 0){
+                gSensorValid = msg.SensorValid;
+                gIsCapturing = msg.IsCapturing;
+                gSensorOn = msg.SensorOn;
+                gIsFingeOn = msg.IsFingerOn;
+            }
+        });
         
         flagStatus = setTimeout(CheckStatusLoop, 1000);
 	}
 
 	function CheckStatus(){
 		selectedDeviceIndex = $("#slt_ScannerList option:selected").attr("value");
-		
-		jQuery.ajax({
-			type : "GET",
-			url : urlStr + "/api/getScannerStatus?dummy=" + Math.random(),
-			dataType : "json",
-			data : {
-			    sHandle: deviceInfos[selectedDeviceIndex].DeviceHandle
-			},
-			success : function(msg) {
-				if(msg.retValue == 0){
-                    gSensorValid = msg.SensorValid;
-                    gIsCapturing = msg.IsCapturing;
-                    gSensorOn = msg.SensorOn;
-				}
-			},
-			error : function(request, status, error) {
-				Toast(JSON.stringify(request), gToastTimeout);
-				Toast(JSON.stringify(status), gToastTimeout);
-				Toast(JSON.stringify(error), gToastTimeout);
-			}
-		});
+
+        deviceHandle = deviceInfos[selectedDeviceIndex].DeviceHandle;
+
+        sendAjaxRequest(urlStr + "/api/getScannerStatus?dummy=" + Math.random() + "?sHandle=" + deviceHandle, function(msg) {
+            if(msg.retValue == 0){
+                gSensorValid = msg.SensorValid;
+                gIsCapturing = msg.IsCapturing;
+                gSensorOn = msg.SensorOn;
+            }
+        });
 	}
 
 	function AppendLog(func, retString) {
@@ -235,34 +258,21 @@
 		$("#Txt_EncKey").attr("value", "");
 		$("#Cb_Encrypt").attr("checked", 0);
 		$("#Cb_ExtractEx").attr("checked", 0);
-		
-		jQuery.ajax({
-			type : "GET",
-			url : urlStr + "/api/getParameters?dummy=" + Math.random(),
-			dataType : "json",
-			data : {
-				sHandle :  ScannerInfos[0].DeviceHandle 
-			},
-			success : function(msg) {
-				AppendLog("getParameters", msg.retString);
-				if(msg.retValue == 0){
-					$("#Tb_BrightnessValue").attr("value" , msg.brightness);
-					$("#Tb_Sensitivity").attr("value" , msg.sensitivity); 
-					$("#Cb_FastMode").attr("checked" , msg.fastmode);
-					$("#Cb_SelTemp").attr("checked", msg.selectTemplate);
-					$("#DDb_TimeoutOpt > option[value="+(msg.timeout/1000 )+"]").attr("selected", "true");
-					$("#DDb_SecuLevOpt > option[value="+msg.securitylevel+"]").attr("selected", "true");						
-					$("#DDb_Tpltype > option[value="+msg.TemplateType+"]").attr("selected", "true");
-					$("#DDb_FakeLevOpt > option[value="+msg.fakeLevel+"]").attr("selected", "true");
-					$("#cb_DetectFakeAdvancedMode").attr("checked", msg.detectFakeAdvancedMode);
-				}			
-			},
-			error : function(request, status, error) {
-				Toast(JSON.stringify(request), gToastTimeout);
-				Toast(JSON.stringify(status), gToastTimeout);
-				Toast(JSON.stringify(error), gToastTimeout);
-			}
-		});
+
+        sendAjaxRequest(urlStr + "/api/getParameters?dummy=" + Math.random() + "?sHandle=" + ScannerInfos[0].DeviceHandle, function(msg) {
+            AppendLog("getParameters", msg.retString);
+            if(msg.retValue == 0){
+                $("#Tb_BrightnessValue").attr("value" , msg.brightness);
+                $("#Tb_Sensitivity").attr("value" , msg.sensitivity);
+                $("#Cb_FastMode").attr("checked" , msg.fastmode);
+                $("#Cb_SelTemp").attr("checked", msg.selectTemplate);
+                $("#DDb_TimeoutOpt > option[value="+(msg.timeout/1000 )+"]").attr("selected", "true");
+                $("#DDb_SecuLevOpt > option[value="+msg.securitylevel+"]").attr("selected", "true");
+                $("#DDb_Tpltype > option[value="+msg.TemplateType+"]").attr("selected", "true");
+                $("#DDb_FakeLevOpt > option[value="+msg.fakeLevel+"]").attr("selected", "true");
+                $("#cb_DetectFakeAdvancedMode").attr("checked", msg.detectFakeAdvancedMode);
+            }
+        });
 	}
 
 	function DisplayScannerList() {
@@ -286,28 +296,18 @@
 
 		var delayVal = 30000;
 
-		jQuery.ajax({
-		    type: "GET",
-		    url : urlStr + "/api/startCapturing?dummy=" + Math.random(),
-		    dataType: "json",
-		    data: {
-		        sHandle: deviceInfos[selectedDeviceIndex].DeviceHandle,
-                id: pageID,
-		        resetTimer: delayVal
-		    },
-		    success: function (msg) {
-		        AppendLog("startCapturing", msg.retString);
-		        if (msg.retValue == 0) {
-		            CheckStatus();
-		            PreviewLoop();
-		        }
-		    },
-		    error: function (request, status, error) {
-		        Toast(JSON.stringify(request), gToastTimeout);
-		        Toast(JSON.stringify(status), gToastTimeout);
-		        Toast(JSON.stringify(error), gToastTimeout);
-		    }
-		});
+		urlRequest = urlStr + "/api/startCapturing?dummy=" + Math.random()
+            + "?sHandle=" + ScannerInfos[0].DeviceHandle
+            + "?id=" + pageID
+            + "?resetTimer=" + delayVal;
+
+        sendAjaxRequest(urlRequest, function(msg) {
+            AppendLog("startCapturing", msg.retString);
+            if (msg.retValue == 0) {
+                CheckStatus();
+                PreviewLoop();
+            }
+        });
 	}
 
 	function AbortCapture() {
@@ -324,25 +324,14 @@
 		if (aLoopflag != undefined) {
 		    clearTimeout(aLoopflag);
 		}
-        				
-		jQuery.ajax({
-			type : "GET",
-			url : urlStr + "/api/abortCapture?dummy=" + Math.random(),
-			dataType : "json",
-			data : {
-			    sHandle: deviceInfos[selectedDeviceIndex].DeviceHandle,
-                resetTimer: delayVal
-			}, 
-			success : function(msg) {
-			    AppendLog("abortCapture", msg.retString);
-			},
-			error : function(request, status, error) 
-			{
-				Toast(JSON.stringify(request), gToastTimeout);
-				Toast(JSON.stringify(status), gToastTimeout);
-				Toast(JSON.stringify(error), gToastTimeout);
-			}
-		});
+
+		urlRequest = urlStr + "/api/abortCapture?dummy=" + Math.random()
+                        + "?sHandle=" + deviceInfos[selectedDeviceIndex].DeviceHandle
+                        + "?resetTimer=" + delayVal;
+
+        sendAjaxRequest(urlRequest, function(msg) {
+            AppendLog("abortCapture", msg.retString);
+        });
 	}
 	
 	function GetTemplateData() {
@@ -358,30 +347,20 @@
             txt_EncryptKey = "";
         }
 
-		jQuery.ajax({
-			type : "GET",
-			url : urlStr + "/api/getTemplateData?dummy=" + Math.random(),
-			dataType : "json",
-			data : {
-			    sHandle: deviceInfos[selectedDeviceIndex].DeviceHandle,
-                id: pageID,
-			    encrypt: cb_EncryptOpt,
-			    encryptKey: txt_EncryptKey,
-			    extractEx: cb_ExtractExMode,
-			    qualityLevel: document.getElementById("DDb_QltyLv").value
-			},
-			success : function(msg) {
-				AppendLog("getTemplateData", msg.retString);
-				if(msg.retValue == 0) {	
-					AppendLogData(msg.templateBase64);
-				}
-			},
-			error : function(request, status, error) {
-				Toast(JSON.stringify(request), gToastTimeout);
-				Toast(JSON.stringify(status), gToastTimeout);
-				Toast(JSON.stringify(error), gToastTimeout);
-			}
-		});
+        urlRequest = urlStr + "/api/getTemplateData?dummy=" + Math.random()
+            + "?sHandle=" + deviceInfos[selectedDeviceIndex].DeviceHandle
+            + "?id=" + pageID
+            + "?encrypt=" + cb_EncryptOpt
+            + "?encryptKey=" + txt_EncryptKey
+            + "?extractEx=" + cb_ExtractExMode
+            + "?qualityLevel=" + document.getElementById("DDb_QltyLv").value;
+
+        sendAjaxRequest(urlRequest, function(msg) {
+            AppendLog("getTemplateData", msg.retString);
+            if(msg.retValue == 0) {
+                AppendLogData(msg.templateBase64);
+            }
+        });
 	}
 	
 	function CaptureSingle() {
@@ -395,31 +374,20 @@
 				
 		var delayVal = 30000;
 
-		jQuery.ajax({
-			type : "GET",
-			url : urlStr + "/api/captureSingle?dummy=" + Math.random(),
-			dataType : "json",
-			data : {
-			    sHandle: deviceInfos[selectedDeviceIndex].DeviceHandle,
-                id: pageID,
-			    resetTimer: delayVal
-			},
-			success : function(msg) 
-			{
-			    if ($('#Cb_PreviewOn').is(":checked")) {
-			        $("#Cb_PreviewOn").attr("checked", 0);
-			    }
-				AppendLog("captureSingle", msg.retString);
-				if(msg.retValue == 0){
-					LoadImage();
-				}
-			},
-			error : function(request, status, error) {
-				Toast(JSON.stringify(request), gToastTimeout);
-				Toast(JSON.stringify(status), gToastTimeout);
-				Toast(JSON.stringify(error), gToastTimeout);
-			}
-		});
+        urlRequest = urlStr + "/api/captureSingle?dummy=" + Math.random()
+            + "?sHandle=" + deviceInfos[selectedDeviceIndex].DeviceHandle
+            + "?id=" + pageID,
+            + "?resetTimer=" + delayVal;
+
+        sendAjaxRequest(urlRequest, function(msg) {
+            if ($('#Cb_PreviewOn').is(":checked")) {
+                $("#Cb_PreviewOn").attr("checked", 0);
+            }
+            AppendLog("captureSingle", msg.retString);
+            if(msg.retValue == 0){
+                LoadImage();
+            }
+        });
 	}
 	
 	function AutoCapture() {
@@ -430,30 +398,20 @@
 						
 		var msg;
 
-		jQuery.ajax({
-			type : "GET",
-			url : urlStr + "/api/autoCapture?dummy=" + Math.random(),
-			data : {
-			    sHandle: deviceInfos[selectedDeviceIndex].DeviceHandle,
-			    id: pageID
-			},
-			success : function(msg) 
-			{
-			    AppendLog("autoCapture", msg.retString);
-			    if ($('#Cb_PreviewOn').is(":checked")) {
-			        $("#Cb_PreviewOn").attr("checked", 0);
-			    }
-			    CheckStatus();
-			    if (msg.retValue == 0) {
-			        AutoCaptureLoop();
-			    }
-			},
-			error : function(request, status, error) {
-				Toast(JSON.stringify(request), gToastTimeout);
-				Toast(JSON.stringify(status), gToastTimeout);
-				Toast(JSON.stringify(error), gToastTimeout);
-			}
-		});
+        urlRequest = urlStr + "/api/autoCapture?dummy=" + Math.random()
+            + "?sHandle=" + deviceInfos[selectedDeviceIndex].DeviceHandle
+            + "?id=" + pageID;
+
+        sendAjaxRequest(urlRequest, function(msg) {
+            AppendLog("autoCapture", msg.retString);
+            if ($('#Cb_PreviewOn').is(":checked")) {
+                $("#Cb_PreviewOn").attr("checked", 0);
+            }
+            CheckStatus();
+            if (msg.retValue == 0) {
+                AutoCaptureLoop();
+            }
+        });
 	}
 	
 	function PreviewLoop() {
@@ -536,31 +494,24 @@
 	}
 
 	function InitPage() {
-        
+
 	    pageID = Math.random();
 	    
 	    if ($('#Cb_PreviewOn').is(":checked")) {
 	        $("#Cb_PreviewOn").attr("checked", 0);
 	    }
 
-	    jQuery.ajax({
-	        type: "GET",
-	        url: urlStr + "/api/createSessionID?dummy=" + Math.random(),
-	        dataType: "json",
-	        success: function (msg) {
-	            var current = new Date();
-	            var expires = new Date();
-	            expires.setTime(new Date(Date.parse(current) + 1000 * 60 * 60));
+        sendAjaxRequest(urlStr + "/api/createSessionID?dummy=" + Math.random(), function(msg) {
+            var current = new Date();
+            var expires = new Date();
+            expires.setTime(new Date(Date.parse(current) + 1000 * 60 * 60));
 
-	            if(msg) {
-					AppendLogData("[Session ID]" + msg.sessionId);
-					var cookieStr = "username=" + msg.sessionId + "; expires=" + expires.toUTCString();
-					document.cookie = cookieStr;
-				}
-	        },
-	        error: function (request, status, error) {
-	        }
-	    });
+            if(msg) {
+                AppendLogData("[Session ID]" + msg.sessionId);
+                var cookieStr = "username=" + msg.sessionId + "; expires=" + expires.toUTCString();
+                document.cookie = cookieStr;
+            }
+		});
 	}
 
     function DeletePage() {
@@ -568,13 +519,8 @@
         var current = new Date();
         document.cookie = "username=; expires=" + current.toUTCString();
 
-        jQuery.ajax({
-            type: "GET",
-            async: false,
-            url: urlStr + "/api/sessionClear?dummy=" + Math.random(),
-            data: {
-                id: pageID
-            }
+        sendAjaxRequest(urlStr + "/api/sessionClear?dummy=" + Math.random() + "?id=" + pageID, function(msg) {
+            //
         });
 	}
 	
@@ -593,65 +539,45 @@
 
 	    var formatType = document.getElementById("DDb_Tftype").value;
 
-		jQuery.ajax({
-			type : "GET",
-			url: urlStr + "/api/saveImageBuffer?dummy=" + Math.random(),
-			dataType : "json",
-			data : {
-			    sHandle: deviceInfos[selectedDeviceIndex].DeviceHandle,
-                id: pageID,
-				fileType: formatType,
-				compressionRatio: document.getElementById("DDb_CompRatio").value
-			},
-			success : function(msg) {
-				AppendLog("saveImageBuffer", msg.retString);
-				if(msg.retValue == 0)
-				{
-				    if (formatType == 1)
-						LoadConvertedImageBuffer(urlStr + "/img/convertedCaptureImage.bmp");
-				    else if (formatType == 2)
-						LoadConvertedImageBuffer(urlStr + "/img/convertedCaptureImage.dat");
-				    else if (formatType == 3)
-						LoadConvertedImageBuffer(urlStr + "/img/convertedCaptureImage.wsq");
-				}					
-			},
-			error : function(request, status, error) {
-				Toast(JSON.stringify(request), gToastTimeout);
-				Toast(JSON.stringify(status), gToastTimeout);
-				Toast(JSON.stringify(error), gToastTimeout);
-			}
-		});
+        urlRequest = urlStr + "/api/saveImageBuffer?dummy=" + Math.random()
+            + "?sHandle=" + deviceInfos[selectedDeviceIndex].DeviceHandle
+            + "?id=" + pageID;
+            + "?fileType=" + formatType
+            + "?compressionRatio" + document.getElementById("DDb_CompRatio").value;
+
+        sendAjaxRequest(urlRequest, function(msg) {
+            AppendLog("saveImageBuffer", msg.retString);
+            if(msg.retValue == 0)
+            {
+                if (formatType == 1)
+                    LoadConvertedImageBuffer(urlStr + "/img/convertedCaptureImage.bmp");
+                else if (formatType == 2)
+                    LoadConvertedImageBuffer(urlStr + "/img/convertedCaptureImage.dat");
+                else if (formatType == 3)
+                    LoadConvertedImageBuffer(urlStr + "/img/convertedCaptureImage.wsq");
+            }
+        });
 	}  
 	
 	function GetImageBuffer() {
 		if( isExistScannerHandle() == false ){
 			Toast('Scanner Init First', gToastTimeout);
 			return ;
-		} 
+		}
 
-		jQuery.ajax({
-			type : "GET",
-			url: urlStr + "/api/getImageData?dummy=" + Math.random(),
-			dataType : "json",
-			data : {
-			    sHandle: deviceInfos[selectedDeviceIndex].DeviceHandle,
-                id: pageID,
-			    fileType: document.getElementById("DDb_Tftype").value,
-			    compressionRatio: document.getElementById("DDb_CompRatio").value
-			},
-			success : function(msg) {
-				AppendLog("GetImageBuffer", msg.retString);
-				if(msg.retValue == 0)
-				{
-                    AppendLogData(msg.imageBase64);
-				}
-			},
-			error : function(request, status, error) {
-				Toast(JSON.stringify(request), gToastTimeout);
-				Toast(JSON.stringify(status), gToastTimeout);
-				Toast(JSON.stringify(error), gToastTimeout);
-			}
-		});
+        urlRequest = urlStr + "/api/getImageData?dummy=" + Math.random()
+            + "?sHandle=" + deviceInfos[selectedDeviceIndex].DeviceHandle
+            + "?id=" + pageID
+            + "?fileType=" + formatType
+            + "?compressionRatio" + document.getElementById("DDb_CompRatio").value;
+
+        sendAjaxRequest(urlRequest, function(msg) {
+            AppendLog("GetImageBuffer", msg.retString);
+            if(msg.retValue == 0)
+            {
+                AppendLogData(msg.imageBase64);
+            }
+        });
 	}  
 
 	function LoadConvertedImageBuffer(imgUrl) {
@@ -788,27 +714,16 @@
 			return;
 		}
 
-		jQuery.ajax({
-            type : "GET",
-            url : urlStr + "/db/verify?dummy=" + Math.random(),
-            dataType : "json",
-            data : {
-                sHandle: deviceInfos[selectedDeviceIndex].DeviceHandle,
-                id: pageID,
-                userSerialNo: selectedUserNo,
-                extractEx: cb_ExtractExMode,
-                qualityLevel: document.getElementById("DDb_QltyLv").value
-            },
-            success : function(msg) {
-                AppendLog("verify", msg.retString);
-                if(msg.retValue == 0) {
-                    AppendLogData("Result of Verify : " + msg.retVerify);
-                }
-            },
-            error : function(request, status, error) {
-                Toast(JSON.stringify(request), gToastTimeout);
-                Toast(JSON.stringify(status), gToastTimeout);
-                Toast(JSON.stringify(error), gToastTimeout);
+        urlRequest = urlStr + "/db/verify?dummy=" + Math.random()
+            + "?sHandle=" + deviceInfos[selectedDeviceIndex].DeviceHandle
+            + "?id=" + pageID
+            + "?extractEx=" + cb_ExtractExMode
+            + "?qualityLevel" + document.getElementById("DDb_QltyLv").value;
+
+        sendAjaxRequest(urlRequest, function(msg) {
+            AppendLog("verify", msg.retString);
+            if(msg.retValue == 0) {
+                AppendLogData("Result of Verify : " + msg.retVerify);
             }
         });
 	}
@@ -829,30 +744,20 @@
 		    txt_EncryptKey = "";
 		}
 
-		jQuery.ajax({
-            type : "GET",
-            url: urlStr + "/db/verifyTemplate?dummy=" + Math.random(),
-            dataType : "json",
-            data : {
-                sHandle: deviceInfos[selectedDeviceIndex].DeviceHandle,
-                id: pageID,
-				tempLen : templateLength,
-				tempData: templateData,
-				encrypt: cb_EncryptOpt,
-				encryptKey: txt_EncryptKey,
-				extractEx: cb_ExtractExMode,
-				qualityLevel: document.getElementById("DDb_QltyLv").value
-            },
-            success : function(msg) {
-                AppendLog("verifyTemplate", msg.retString);
-                if(msg.retValue == 0) {
-                    AppendLogData("Result of verifyTemplate : " + msg.retVerify);
-                }
-            },
-            error : function(request, status, error) {
-                Toast(JSON.stringify(request), gToastTimeout);
-                Toast(JSON.stringify(status), gToastTimeout);
-                Toast(JSON.stringify(error), gToastTimeout);
+        urlRequest = urlStr + "/api/verifyTemplate?dummy=" + Math.random()
+            + "?sHandle=" + deviceInfos[selectedDeviceIndex].DeviceHandle
+            + "?id=" + pageID
+            + "?tempLen" + templateLength
+            + "?tempData" + templateData
+            + "?encrypt" + cb_EncryptOpt
+            + "?encryptKey" + txt_EncryptKey
+            + "?extractEx" + cb_ExtractExMode
+            + "?qualityLevel" + document.getElementById("DDb_QltyLv").value;
+
+        sendAjaxRequest(urlRequest, function(msg) {
+            AppendLog("verifyTemplate", msg.retString);
+            if(msg.retValue == 0) {
+                AppendLogData("Result of verifyTemplate : " + msg.retVerify);
             }
         });
 	}
@@ -867,48 +772,34 @@
 			AppendLogData("First, add User Data");
 			return;
 		}
-		
-		jQuery.ajax({
-            type : "GET",
-            url: urlStr + "/db/identify?dummy=" + Math.random(),
-            dataType : "json",
-            data : {
-                sHandle: deviceInfos[selectedDeviceIndex].DeviceHandle,
-                id: pageID,
-                extractEx: cb_ExtractExMode,
-                qualityLevel: document.getElementById("DDb_QltyLv").value
-            },
-            success : function(msg) {
-                AppendLog("identify", msg.retString);
-                if(msg.matchedIndex == -1) {
-                    AppendLogData("There is no matched template data");
-                }else{
-                    AppendLogData("Index of Matched Template : " + msg.matchedIndex + "(" + msg.matchedID + ")");
-                }
-            },
-            error : function(request, status, error) {
-                Toast(JSON.stringify(request), gToastTimeout);
-                Toast(JSON.stringify(status), gToastTimeout);
-                Toast(JSON.stringify(error), gToastTimeout);
+
+        urlRequest = urlStr + "/db/identify?dummy=" + Math.random()
+            + "?sHandle=" + deviceInfos[selectedDeviceIndex].DeviceHandle
+            + "?id=" + pageID
+            + "?extractEx" + cb_ExtractExMode
+            + "?qualityLevel" + document.getElementById("DDb_QltyLv").value;
+
+        sendAjaxRequest(urlRequest, function(msg) {
+            AppendLog("identify", msg.retString);
+            if(msg.matchedIndex == -1) {
+                AppendLogData("There is no matched template data");
+            }else{
+                AppendLogData("Index of Matched Template : " + msg.matchedIndex + "(" + msg.matchedID + ")");
             }
-		});
+        });
 	}
 	
 	function AbortIdentify(){
-		
-		jQuery.ajax({
-			type : "GET",
-			url: urlStr + "/db/abortIdentify?dummy=" + Math.random(),
-			dataType : "json",
-			success : function(msg) {
-				AppendLog("abortIdentify", msg.retString);
-			},
-			error : function(request, status, error) {
-				Toast(JSON.stringify(request), gToastTimeout);
-				Toast(JSON.stringify(status), gToastTimeout);
-				Toast(JSON.stringify(error), gToastTimeout);
-			}
-		});
+
+        urlRequest = urlStr + "/db/abortIdentify?dummy=" + Math.random()
+            + "?sHandle=" + deviceInfos[selectedDeviceIndex].DeviceHandle
+            + "?id=" + pageID
+            + "?extractEx" + cb_ExtractExMode
+            + "?qualityLevel" + document.getElementById("DDb_QltyLv").value;
+
+        sendAjaxRequest(urlRequest, function(msg) {
+            AppendLog("abortIdentify", msg.retString);
+        });
 	}
 	
 	function Enroll() {
@@ -955,33 +846,25 @@
 		    txt_EncryptKey = "";
 		}
 
-		jQuery.ajax({
-			type : "GET",
-			url: urlStr + "/db/enroll?dummy=" + Math.random(),
-			dataType : "json",
-			data : {
-			    sHandle: deviceInfos[selectedDeviceIndex].DeviceHandle,
-                id: pageID,
-				userID : UserID,
-				userSerialNo : numOfEnrolledUser,
-				selectTemplate: cb_SelectTemplateOpt,
-				encrypt: cb_EncryptOpt,
-				encryptKey: txt_EncryptKey,
-				extractEx: cb_ExtractExMode,
-				qualityLevel: document.getElementById("DDb_QltyLv").value
-			},
-			success : function(msg) {
-				if(msg.retValue == 0) {
-					userIDs.push(UserID);
-					userTemps.push(cb_SelectTemplateOpt);
-					insertUserInfo(numOfEnrolledUser, UserID, cb_SelectTemplateOpt);
-					numOfEnrolledUser++;
-				}
-			},
-			error : function(request, status, error) {
-				HandleError(request, status, error);
-			}
-		});
+        urlRequest = urlStr + "/db/enroll?dummy=" + Math.random()
+            + "?sHandle=" + deviceInfos[selectedDeviceIndex].DeviceHandle
+            + "?id=" + pageID
+            + "?userID=" + UserID
+            + "?userSerialNo=" +  numOfEnrolledUser
+            + "?selectTemplate=" + cb_SelectTemplateOpt
+            + "?encrypt=" + cb_EncryptOpt
+            + "?encryptKey=" + txt_EncryptKey
+            + "?extractEx=" + cb_ExtractExMode
+            + "?qualityLevel=" + document.getElementById("DDb_QltyLv").value;
+
+        sendAjaxRequest(urlRequest, function(msg) {
+            if(msg.retValue == 0) {
+                userIDs.push(UserID);
+                userTemps.push(cb_SelectTemplateOpt);
+                insertUserInfo(numOfEnrolledUser, UserID, cb_SelectTemplateOpt);
+                numOfEnrolledUser++;
+            }
+        });
 	}
 	
 	function QueryData() {
@@ -989,41 +872,33 @@
 			Toast('Scanner Init First', gToastTimeout);
 			return ;
 		}
-        
-		jQuery.ajax({
-			type : "GET",
-			url: urlStr + "/db/queryData?dummy=" + Math.random(),
-			dataType : "json",
-			data : {
-				sHandle : deviceInfos[selectedDeviceIndex].DeviceHandle,
-			},
-			success : function(msg) {
-				AppendLog("queryData", msg.retString);
-				if(msg.retValue == 0) {
-               		$("#slt_UserList").attr("innerHTML" , "");
-                    numOfEnrolledUser = 0;
-                    var n_users = parseInt(msg.db.size);
-                    for(var i=0; i<n_users; i++) {
-                        var id_i = msg.db[i].id;
-                        var tmp2_size = msg.db[i].template2;
-                        var type_i = 0;
-                        userIDs.push(id_i);
-                        if(tmp2_size == 0) {
-                            userTemps.push(0);
-                        }
-                        else {
-                            userTemps.push(1);
-                            type_i = 1;
-                        }
-                        insertUserInfo(numOfEnrolledUser, id_i, type_i);
-                        numOfEnrolledUser++;
+
+        urlRequest = urlStr + "/db/queryData?dummy=" + Math.random()
+            + "?sHandle=" + deviceInfos[selectedDeviceIndex].DeviceHandle
+
+        sendAjaxRequest(urlRequest, function(msg) {
+            AppendLog("queryData", msg.retString);
+            if(msg.retValue == 0) {
+                $("#slt_UserList").attr("innerHTML" , "");
+                numOfEnrolledUser = 0;
+                var n_users = parseInt(msg.db.size);
+                for(var i=0; i<n_users; i++) {
+                    var id_i = msg.db[i].id;
+                    var tmp2_size = msg.db[i].template2;
+                    var type_i = 0;
+                    userIDs.push(id_i);
+                    if(tmp2_size == 0) {
+                        userTemps.push(0);
                     }
-				}
-			},
-			error : function(request, status, error) {
-				HandleError(request, status, error);
-			}
-		});
+                    else {
+                        userTemps.push(1);
+                        type_i = 1;
+                    }
+                    insertUserInfo(numOfEnrolledUser, id_i, type_i);
+                    numOfEnrolledUser++;
+                }
+            }
+        });
 	}
 
 	function OnSelectUser(){
@@ -1068,28 +943,22 @@
 			Toast("Select User-index", gToastTimeout);
 			return;
 		}
-				
-		jQuery.ajax({
-			type : "GET",
-			url: urlStr + "/db/delete?dummy=" + Math.random(),
-			dataType : "json",
-			data : {
-				sHandle : deviceInfos[selectedDeviceIndex].DeviceHandle,
-				userSerialNo : selectedUserNo
-			},
-			success : function(msg) {
-				AppendLog("delete", msg.retString);
-				if(msg.retValue == 0) {
-					deleteUserInfo(selectedUserNo);
-					userIDs.splice(selectedUserNo, 1);
-					userTemps.splice(selectedUserNo, 1);
-					numOfEnrolledUser--;
-				}
-			},
-			error : function(request, status, error) {
-				HandleError(request, status, error);
-			}
-		});
+
+        urlRequest = urlStr + "/db/delete?dummy=" + Math.random()
+            + "?sHandle=" + deviceInfos[selectedDeviceIndex].DeviceHandle
+            + "?id=" + pageID
+            + "?userID=" + UserID
+            + "?userSerialNo=" +  selectedUserNo;
+
+        sendAjaxRequest(urlRequest, function(msg) {
+            AppendLog("delete", msg.retString);
+            if(msg.retValue == 0) {
+                deleteUserInfo(selectedUserNo);
+                userIDs.splice(selectedUserNo, 1);
+                userTemps.splice(selectedUserNo, 1);
+                numOfEnrolledUser--;
+            }
+        });
 	}
 	
 	function UpdateTemplate() {
@@ -1107,25 +976,17 @@
 			Toast("Select User-index", gToastTimeout);
 			return;
 		}
-		
-		jQuery.ajax({
-			type : "GET",
-			url: urlStr + "/db/update?dummy=" + Math.random(),
-			dataType : "json",
-			data : {
-			    sHandle: deviceInfos[selectedDeviceIndex].DeviceHandle,
-                id: pageID,
-				userSerialNo: selectedUserNo,
-				extractEx: cb_ExtractExMode,
-				qualityLevel: document.getElementById("DDb_QltyLv").value
-			},
-			success : function(msg) {
-				AppendLog("update", msg.retString);
-			},
-			error : function(request, status, error) {
-				HandleError(request, status, error);
-			}
-		});
+
+        urlRequest = urlStr + "/db/update?dummy=" + Math.random()
+            + "?sHandle=" + deviceInfos[selectedDeviceIndex].DeviceHandle
+            + "?id=" + pageID
+            + "?userSerialNo=" +  selectedUserNo
+            + "?extractEx=" + cb_ExtractExMode
+            + "?qualityLevel=" +  document.getElementById("DDb_QltyLv").value;
+
+        sendAjaxRequest(urlRequest, function(msg) {
+            AppendLog("update", msg.retString);
+        });
 	}
 	
 	function InfoDelAll() {
@@ -1134,18 +995,17 @@
 		numOfEnrolledUser = 0;
 		userIDs = [];
 		userTemps = [];
-		
-		jQuery.ajax({
-			type : "GET",
-			url: urlStr + "/db/deleteAll?dummy=" + Math.random(),
-			dataType : "json",
-			success : function(msg) {
-				AppendLog("deleteAll", msg.retString);
-			},
-			error : function(request, status, error) {
-					HandleError(request, status, error);
-			}
-		});
+
+        urlRequest = urlStr + "/db/deleteAll?dummy=" + Math.random()
+            + "?sHandle=" + deviceInfos[selectedDeviceIndex].DeviceHandle
+            + "?id=" + pageID
+            + "?userSerialNo=" +  selectedUserNo
+            + "?extractEx=" + cb_ExtractExMode
+            + "?qualityLevel=" +  document.getElementById("DDb_QltyLv").value;
+
+        sendAjaxRequest(urlRequest, function(msg) {
+            AppendLog("deleteAll", msg.retString);
+        });
 	}
 	
 	function SaveTemplate() {
@@ -1170,28 +1030,20 @@
 		else {
 		    txt_EncryptKey = "";
 		}
-		
-		jQuery.ajax({
-			type : "GET",
-			url: urlStr + "/db/getTemplateData?dummy=" + Math.random(),
-			dataType : "json",
-			data : {
-			    sHandle: deviceInfos[selectedDeviceIndex].DeviceHandle,
-                id: pageID,
-				userSerialNo: selectedUserNo,
-				encrypt: cb_EncryptOpt,
-				encryptKey: txt_EncryptKey
-			},
-			success : function(msg) {
-				AppendLog("db/getTemplateData", msg.retString);
-				if(msg.retValue == 0) {	
-					AppendLogData(msg.templateBase64);
-				}
-			},
-			error : function(request, status, error) {
-					HandleError(request, status, error);
-			}
-		});
+
+        urlRequest = urlStr + "/db/getTemplateData?dummy=" + Math.random()
+            + "?sHandle=" + deviceInfos[selectedDeviceIndex].DeviceHandle
+            + "?id=" + pageID
+            + "?userSerialNo=" +  selectedUserNo
+            + "?encrypt=" + cb_EncryptOpt
+            + "?encryptKey=" + txt_EncryptKey;
+
+        sendAjaxRequest(urlRequest, function(msg) {
+            AppendLog("db/getTemplateData", msg.retString);
+            if(msg.retValue == 0) {
+                AppendLogData(msg.templateBase64);
+            }
+        });
 	}
 	
 	function SendParameter() {
@@ -1215,31 +1067,25 @@
 		ddb_Timeout = document.getElementById("DDb_TimeoutOpt").value;
 		ddb_TemplateType = document.getElementById("DDb_Tpltype").value;
 		ddb_Fakelevel = document.getElementById("DDb_FakeLevOpt").value;
-		
+
+
 		$(document).ready(function() {
-			jQuery.ajax({
-				type : "GET",
-				url: urlStr + "/api/setParameters?dummy=" + Math.random(),
-				dataType : "json",
-				data : {
-					sHandle : deviceInfos[selectedDeviceIndex].DeviceHandle,
-					brightness : tb_Brightness,
-					fastmode : cb_FastMode,
-					securitylevel : ddb_Securitylevel,
-					sensitivity : tb_Sensitivity,
-					timeout : ddb_Timeout,
-					templateType : ddb_TemplateType,
-					fakeLevel : ddb_Fakelevel,
-					detectFakeAdvancedMode : cb_DetectFakeAdvancedMode
-				},
-				success : function(msg) {
-				    AppendLog("setParameters", msg.retString);
-				    AppendLogData(" unsupportedVariables : " + msg.unsupportedVariables);
-				},
-				error : function(request, status, error) {
-					HandleError(request, status, error);
-				}
-			});
+
+            urlRequest = urlStr + "/db/setParameters?dummy=" + Math.random()
+                + "?sHandle=" + deviceInfos[selectedDeviceIndex].DeviceHandle
+                + "?brightness=" + tb_Brightness
+                + "?fastmode=" + cb_FastMode
+                + "?securitylevel=" + ddb_Securitylevel
+                + "?sensitivity=" + tb_Sensitivity
+                + "?timeout=" + ddb_Timeout
+                + "?templateType=" + ddb_TemplateType
+                + "?fakeLevel=" + ddb_Fakelevel
+                + "?detectFakeAdvancedMode=" + cb_DetectFakeAdvancedMode;
+
+            sendAjaxRequest(urlRequest, function(msg) {
+                AppendLog("setParameters", msg.retString);
+                AppendLogData(" unsupportedVariables : " + msg.unsupportedVariables);
+            });
 		});
 	}
 	function ClearLog()
