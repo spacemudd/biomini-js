@@ -63,57 +63,6 @@
         }
     }
 
-    function sendXmlHttpRequest(url, callback) {
-        var xmlHttp;
-
-        xmlHttp = new XMLHttpRequest();
-
-        xmlHttp.onreadystatechange = function() {
-            if(xmlHttp.readyState == 4 && xmlHttp.status == 200) {
-                callback(JSON.parse(xmlHttp.responseText));
-            }
-        }
-
-        xmlHttp.open('GET', url, true);
-        xmlHttp.send();
-
-        if(debug) {
-        	alert('XMLHttp');
-		}
-	}
-
-	function sendXDomainRequestRequest(url) {
-        var response;
-
-        response = new XDomainRequest();
-
-        response.onload = function() {
-                return response.responseText;
-        }
-
-        response.open('GET', url, true);
-        response.send();
-
-        if(debug) {
-            alert('XDomainRequest');
-        }
-	}
-
-	function sendActiveXRequest(url) {
-        var response;
-
-        response = new ActiveXObject("Microsoft.XMLHTTP");
-        // response = new ActiveXObject("MSXML2.ServerXMLHTTP.6.0");
-        // response.setOption(2, 13056);
-
-        response.open('GET', url, false);
-        response.send();
-
-        if(debug) {
-            alert('ActiveXObject');
-        }
-	}
-
     /**
      * Sends an AJAX request.
 	 *
@@ -121,22 +70,27 @@
      * @param callback
      */
     function sendAjaxRequest(url, callback) {
-        if (window.XMLHttpRequest) {
-            sendXmlHttpRequest(url, function(response) {
-                callback(response);
-            });
-        } else if (window.XDomainRequest) {
-            var response = sendXDomainRequestRequest(url);
-            callback(response);
-        } else {
-            var response = sendActiveXRequest(url);
-            callback(response);
-		}
+        var xdr = new XDomainRequest();
+
+        xdr.onload = function () {
+        	var dom = new ActiveXObject('Microsoft.XMLDOM'),
+        	JSON = $.parseJSON(date.firstChild.textContent);
+        }
+
+        callback(JSON);
+
+        xdr.onerror = function() {
+        	_result = false;
+        };
+
+        xdr.open('get', url);
+        xdr.send();
     }
 
 
 	function Init() {
         sendAjaxRequest(urlStr + "/api/initDevice?dummy=" + Math.random(), function(msg) {
+
             var current = new Date();
             var expires = new Date();
             expires.setTime(new Date(Date.parse(current) + 1000 * 60 * 60));
@@ -148,6 +102,8 @@
                     CheckStatusLoop();
                 }
             }
+
+
         });
 	}
 	
