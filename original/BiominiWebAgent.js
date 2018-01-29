@@ -1,11 +1,8 @@
 	////////////////////////////////////////////////// Global Variables //////////////////////////////////////////////
 
-	// var protocolVer = "http";		
-	// var domainName = "localhost";
-	// var portNo = 5678;
-	var protocolVer = "https";		
+	var protocolVer = "http";		
 	var domainName = "localhost";
-	var portNo = 8083;
+	var portNo = 5678;
 	
 	var strBuffer;                      
 	var numOfEnrolledUser = 0;
@@ -44,8 +41,8 @@
     var gToastTimeout = 3000;
     var tagToast;
 
-    var urlStr = protocolVer + '://' + domainName + ':' + portNo;
-    //var urlStr = "";
+    //var urlStr = protocolVer + '://' + domainName + ':' + portNo;
+    var urlStr = "";
 
     var pageID = 0;
 ////////////////////////////////////////////////// Functions //////////////////////////////////////////////

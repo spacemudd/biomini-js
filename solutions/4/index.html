@@ -1,17 +1,18 @@
-
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
     <title>BioMini Web Example</title>
     <meta charset="utf-8">
-    <script language="JavaScript" src='biomini_webagent_pure.js'></script>
+    <script language='javascript' src='array.generics.min.js'></script>
+    <script language='javascript' src='jquery.min.js'></script>
+    <script language="JavaScript" src='BiominiWebAgent.js'></script>
 </head>
 <body onload="InitPage()"
       onbeforeunload="DeletePage()">
     <center>
         <table id="MainTable">
             <tr>
-                <td><h1>BioMini Web (Pure JS)</h1></td>
+                <td><h1>BioMini Web Example</h1></td>
                 <td colspan="2"><h2 id="TdAlert" style="color:blue;"></h2></td>
             </tr>
             <tr>
@@ -92,7 +93,7 @@
                                     <button type="button" id="bt_SensitivityValuedw" onclick="SensitivityValuedw()">-</button>
                                 </td>
                             </tr>
-                            <tr>
+							<tr>
                                 <td width="80">FakeLevel</td>
                                 <td>
                                     <select size="1" id="DDb_FakeLevOpt" onchange="FakeLevOpt()">
@@ -103,7 +104,7 @@
                                         <option value="4">4</option>
                                         <option value="5">5</option>
                                     </select>
-                                    <label><input type="checkBox" id="Cb_EnDetectFakeAdvanced" onclick="EnDetectFakeAdvancedChecked();" /> Ex</label>
+									<label><input type="checkBox" id="Cb_EnDetectFakeAdvanced" onclick="EnDetectFakeAdvancedChecked();" /> Ex</label>
                                 </td>
                             </tr>
                         </table>

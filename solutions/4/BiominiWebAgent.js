@@ -1,8 +1,8 @@
 	////////////////////////////////////////////////// Global Variables //////////////////////////////////////////////
 
-	var protocolVer = "https";		
+	var protocolVer = "http";		
 	var domainName = "localhost";
-	var portNo = 8083;
+	var portNo = 5678;
 	
 	var strBuffer;                      
 	var numOfEnrolledUser = 0;
@@ -41,8 +41,8 @@
     var gToastTimeout = 3000;
     var tagToast;
 
-    var urlStr = protocolVer + '://' + domainName + ':' + portNo;
-    // var urlStr = "";
+    //var urlStr = protocolVer + '://' + domainName + ':' + portNo;
+    var urlStr = "";
 
     var pageID = 0;
 ////////////////////////////////////////////////// Functions //////////////////////////////////////////////
@@ -61,48 +61,27 @@
         }
     }
 
-    function ajax(url, callback)
-    {
-    	var xmlHttp;
-
-    	xmlHttp = new XMLHttpRequest();
-
-    	xmlHttp.onreadystatechange = function() {
-    		if(xmlHttp.readyState == 4 && xmlHttp.status == 200) {
-    			callback(xmlHttp.responseText);
-    		}
-    	}
-
-    	xmlHttp.open('GET', url, true);
-    	xmlHttp.send();
-    }
 
 	function Init() {
-
-
-        ajax(urlStr + "/api/initDevice?dummy=" + Math.random(), function(response) {
-            console.log(response);
-        })
 		
-		// jQuery.ajax({
-		// 	type : "GET",
-		// 	url : urlStr + "/api/initDevice?dummy=" + Math.random(),
-		// 	dataType : "json",
-		// 	//crossDomain: true,
-		// 	success : function(msg) {
-		// 		AppendLog("Init", msg.retString);
-		// 		if(msg.retValue == 0) {
-		// 			deviceInfos = msg.ScannerInfos;
-		// 			AddScannerList(deviceInfos);
-         //            CheckStatusLoop();
-		// 		}
-		// 	},
-		// 	error : function(request, status, error) {
-		// 		Toast(JSON.stringify(request), gToastTimeout);
-		// 		Toast(JSON.stringify(status), gToastTimeout);
-		// 		Toast(JSON.stringify(error), gToastTimeout);
-		// 	}
-		// });
+		jQuery.ajax({
+			type : "GET",
+			url : urlStr + "/api/initDevice?dummy=" + Math.random(),
+			dataType : "json",
+			success : function(msg) {
+				AppendLog("Init", msg.retString);
+				if(msg.retValue == 0) {
+					deviceInfos = msg.ScannerInfos;
+					AddScannerList(deviceInfos);
+                    CheckStatusLoop();
+				}
+			},
+			error : function(request, status, error) {
+				Toast(JSON.stringify(request), gToastTimeout);
+				Toast(JSON.stringify(status), gToastTimeout);
+				Toast(JSON.stringify(error), gToastTimeout);
+			}
+		});
 	}
 	
 	function UnInit() {
@@ -115,10 +94,6 @@
 			type : "GET",
 			url : urlStr + "/api/uninitDevice?dummy=" + Math.random(),
 			dataType : "json",
-			crossDomain: true,
-			xhrFields: {
-				withCredentials: false,
-			},
 			success : function(msg) {
 				AppendLog("Uninit", msg.retString);
 				if(msg.retValue == 0){
@@ -563,12 +538,29 @@
 	function InitPage() {
         
 	    pageID = Math.random();
+	    
+	    if ($('#Cb_PreviewOn').is(":checked")) {
+	        $("#Cb_PreviewOn").attr("checked", 0);
+	    }
 
-	    ajax(urlStr + "/api/createSessionID?dummy=" + Math.random(), function(result) {
-	    	console.log(result);
+	    jQuery.ajax({
+	        type: "GET",
+	        url: urlStr + "/api/createSessionID?dummy=" + Math.random(),
+	        dataType: "json",
+	        success: function (msg) {
+	            var current = new Date();
+	            var expires = new Date();
+	            expires.setTime(new Date(Date.parse(current) + 1000 * 60 * 60));
+
+	            if(msg) {
+					AppendLogData("[Session ID]" + msg.sessionId);
+					var cookieStr = "username=" + msg.sessionId + "; expires=" + expires.toUTCString();
+					document.cookie = cookieStr;
+				}
+	        },
+	        error: function (request, status, error) {
+	        }
 	    });
-
-	    // console.log(result);
 	}
 
     function DeletePage() {
@@ -576,14 +568,14 @@
         var current = new Date();
         document.cookie = "username=; expires=" + current.toUTCString();
 
-        // jQuery.ajax({
-        //     type: "GET",
-        //     async: false,
-        //     url: urlStr + "/api/sessionClear?dummy=" + Math.random(),
-        //     data: {
-        //         id: pageID
-        //     }
-        // });
+        jQuery.ajax({
+            type: "GET",
+            async: false,
+            url: urlStr + "/api/sessionClear?dummy=" + Math.random(),
+            data: {
+                id: pageID
+            }
+        });
 	}
 	
 	function LoadImage() {
@@ -1258,7 +1250,7 @@
     function Toast(msg, timeout)
     {
         document.getElementById("TdAlert").innerHTML = msg;
-        // clearTimeout(tagToast);
+        clearTimeout(tagToast);
         tagToast = setTimeout(function(){ document.getElementById("TdAlert").innerHTML = ""; }, timeout);
     }
 	
