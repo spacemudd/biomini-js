@@ -1,0 +1,18 @@
+timeoutop = 5
+brightness = 100
+sensitivity = 7
+fakelevelopt  0
+tftype = 3
+compratio = 0.7 //
+seculevelopt = 4
+tpltype = 2001
+qltylv = 10
+db_fastmode //
+
+// tootls custom level -> miscellenous -> access data sources across domains -> enable
+// to supress https certificate prompt
+
+//  content -> certificates -> trusted publishers + personal
+
+-------
+

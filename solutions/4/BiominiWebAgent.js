@@ -69,28 +69,42 @@
      * @param url string
      * @param callback
      */
-    function sendAjaxRequest(url, callback) {
-        var xdr = new XDomainRequest();
+    function sendAjaxRequest(url, callback)
+    {
+    	if(window.XDomainRequest) {
+			var xdr = new XDomainRequest();
 
-        xdr.onload = function () {
-        	var dom = new ActiveXObject('Microsoft.XMLDOM'),
-        	JSON = $.parseJSON(date.firstChild.textContent);
-        }
+	        xdr.onload = function () {
+	        	var dom = new ActiveXObject('Microsoft.XMLDOM'),
+	        	JSON = $.parseJSON(date.firstChild.textContent);
 
-        callback(JSON);
+	        	alert('Hello');
+	        }
 
-        xdr.onerror = function() {
-        	_result = false;
-        };
+	        xdr.onerror = function() {
+	        	_result = false;
+	        };
 
-        xdr.open('get', url);
-        xdr.send();
+	        xdr.open('get', url);
+	        xdr.send();
+    	} else {
+    		jQuery.ajax({
+				type : "GET",
+				url : url,
+				dataType : "json",
+				success : function(msg) {
+					alert(msg);
+				}
+			});
+    	}
     }
 
 
 	function Init() {
+		alert('Initializing');
         sendAjaxRequest(urlStr + "/api/initDevice?dummy=" + Math.random(), function(msg) {
 
+        	alert(msg);
             var current = new Date();
             var expires = new Date();
             expires.setTime(new Date(Date.parse(current) + 1000 * 60 * 60));

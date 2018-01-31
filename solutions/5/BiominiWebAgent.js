@@ -5,7 +5,7 @@
 	var domainName = "localhost";
 	// var portNo = 5678;
 	var portNo = 8083;
-	
+
 	var strBuffer;                      
 	var numOfEnrolledUser = 0;
 	var flag;
@@ -64,9 +64,12 @@
     }
 
 
-	function Init() {
-		
+	function Init(callbackResponse) {
+		jQuery.support.cors = true;
+
 		jQuery.ajax({
+			contentType: "application/json; charset=utf-8",
+			crossDomain: true,
 			type : "GET",
 			url : urlStr + "/api/initDevice?dummy=" + Math.random(),
 			dataType : "json",
@@ -386,13 +389,14 @@
 		});
 	}
 	
-	function CaptureSingle() {
+	function CaptureSingle(callbackResponse) {
 		if( isExistScannerHandle() == false ){
 			Toast('Scanner Init First', gToastTimeout);
 			return ;
 		} 
 		        
 		$('#Fpimg').attr('src', 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==');
+		
 		Toast("Placed your Finger on Camera", gToastTimeout);
 				
 		var delayVal = 30000;
@@ -408,13 +412,8 @@
 			},
 			success : function(msg) 
 			{
-			    if ($('#Cb_PreviewOn').is(":checked")) {
-			        $("#Cb_PreviewOn").attr("checked", 0);
-			    }
-				AppendLog("captureSingle", msg.retString);
-				if(msg.retValue == 0){
-					LoadImage();
-				}
+
+				callbackResponse(msg);
 			},
 			error : function(request, status, error) {
 				Toast(JSON.stringify(request), gToastTimeout);
@@ -567,7 +566,7 @@
 
     function DeletePage() {
         var current = new Date();
-        document.cookie = "suprema_username=; expires=" + current.toUTCString();
+        document.cookie = "username=; expires=" + current.toUTCString();
 
         jQuery.ajax({
             type: "GET",
@@ -648,13 +647,12 @@
 				}
 			},
 			error : function(request, status, error) {
-				alert
 				Toast(JSON.stringify(request), gToastTimeout);
 				Toast(JSON.stringify(status), gToastTimeout);
 				Toast(JSON.stringify(error), gToastTimeout);
 			}
 		});
-	}  
+	}
 
 	function LoadConvertedImageBuffer(imgUrl) {
         var iframe = document.createElement("iframe"); 
