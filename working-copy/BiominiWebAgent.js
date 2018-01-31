@@ -66,7 +66,11 @@
 
 	function Init() {
 		
+		jQuery.support.cors = true;
+
 		jQuery.ajax({
+			contentType: "application/json; charset=utf-8",
+			crossDomain: true,
 			type : "GET",
 			url : urlStr + "/api/initDevice?dummy=" + Math.random(),
 			dataType : "json",
